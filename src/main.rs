@@ -1,6 +1,6 @@
 use dns::{
     buffer_packets::BytePacketBuffer,
-    dns_header::{DnsHeaderFlag, QueryResponseIndicator},
+    dns_header::{DnsHeaderFlag, OperationCode, QueryResponseIndicator, ResponseCode},
     dns_message::DnsMessage,
 };
 use std::convert::From;
@@ -28,7 +28,19 @@ fn main() {
                 let mut dns_msg = DnsMessage::from(&packet.buf);
 
                 println!("Flags received {}", dns_msg.header.flags);
-                dns_msg.set_header_flag(DnsHeaderFlag::Qr(QueryResponseIndicator::Response()));
+                dns_msg
+                    .header
+                    .set_header_flag(DnsHeaderFlag::Qr(QueryResponseIndicator::Response()));
+
+                // For some reason the response code is based on the op code?
+                match dns_msg.header.get_op_code() {
+                    OperationCode::Query() => dns_msg
+                        .header
+                        .set_header_flag(DnsHeaderFlag::RCode(ResponseCode::NoError)),
+                    _ => dns_msg
+                        .header
+                        .set_header_flag(DnsHeaderFlag::RCode(ResponseCode::NotImp)),
+                }
 
                 println!("Flags after modification: {:016b}", dns_msg.header.flags);
                 let response: [u8; 512] = dns_msg.serialize_as_be();

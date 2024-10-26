@@ -80,18 +80,18 @@ impl DnsMessage {
         Ok((questions, offset))
     }
 
-    pub fn set_header_flag(&mut self, flag: DnsHeaderFlag) {
-        match flag {
-            DnsHeaderFlag::Qr(qri) => match qri {
-                // Ensures flag is set to '0' regardless of whether current value is 1 or 0
-                QueryResponseIndicator::Query() => self.header.flags &= qri.value(),
+    // pub fn set_header_flag(&mut self, flag: DnsHeaderFlag) {
+    //     match flag {
+    //         DnsHeaderFlag::Qr(qri) => match qri {
+    //             // Ensures flag is set to '0' regardless of whether current value is 1 or 0
+    //             QueryResponseIndicator::Query() => self.header.flags &= qri.value(),
 
-                // Ensures flag is set to '1' regardless of whether current value is 1 or 0
-                QueryResponseIndicator::Response() => self.header.flags |= qri.value(),
-            },
-            _ => panic!("not implemented"),
-        }
-    }
+    //             // Ensures flag is set to '1' regardless of whether current value is 1 or 0
+    //             QueryResponseIndicator::Response() => self.header.flags |= qri.value(),
+    //         },
+    //         _ => panic!("not implemented"),
+    //     }
+    // }
 
     pub fn serialize_as_be(self) -> [u8; 512] {
         let mut bytes: [u8; 512] = [0; 512];

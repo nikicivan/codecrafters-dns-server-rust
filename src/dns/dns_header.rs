@@ -44,6 +44,30 @@ impl Into<[u8; 12]> for DnsHeader {
     }
 }
 
+impl DnsHeader {
+    pub fn set_header_flag(&mut self, flag: DnsHeaderFlag) {
+        match flag {
+            DnsHeaderFlag::Qr(qri) => match qri {
+                // Ensures flag is set to '0' regardless of whether current value is 1 or 0
+                QueryResponseIndicator::Query() => self.flags &= qri.value(),
+                // Ensures flag is set to '1' regardless of whether current value is 1 or 0
+                QueryResponseIndicator::Response() => self.flags |= qri.value(),
+            },
+            DnsHeaderFlag::RCode(code) => {
+                // clear the response code bits
+                self.flags &= 0b1111111111110000;
+                self.flags |= (code as u16) & 0b0000000000001111;
+            }
+            _ => {}
+        }
+    }
+    pub fn get_op_code(&self) -> OperationCode {
+        // isolate the op code bits and convert to a u8 by shifting
+        let op_bits = (self.flags & 0b0111100000000000) >> 11;
+        OperationCode::try_from(op_bits as u8).unwrap()
+    }
+}
+
 pub enum DnsHeaderFlag {
     Qr(QueryResponseIndicator),
     OpCode(OperationCode),
@@ -89,6 +113,22 @@ impl OperationCode {
             OperationCode::Notify() => 4,
             OperationCode::Update() => 5,
             OperationCode::DnsStatefulOperations() => 6,
+        }
+    }
+}
+
+impl TryFrom<u8> for OperationCode {
+    type Error = String;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(OperationCode::Query()),
+            1 => Ok(OperationCode::IQuery()),
+            2 => Ok(OperationCode::Status()),
+            3 => Ok(OperationCode::Unassigned()),
+            4 => Ok(OperationCode::Notify()),
+            5 => Ok(OperationCode::Update()),
+            6 => Ok(OperationCode::DnsStatefulOperations()),
+            _ => unreachable!(),
         }
     }
 }
