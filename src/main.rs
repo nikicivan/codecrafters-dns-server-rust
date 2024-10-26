@@ -1,9 +1,13 @@
-use configs::setup::{BytePacketBuffer, DnsHeaderFlag, DnsMessage, QueryResponseIndicator};
+use dns::{
+    buffer_packets::BytePacketBuffer,
+    dns_header::{DnsHeaderFlag, QueryResponseIndicator},
+    dns_message::DnsMessage,
+};
 use std::convert::From;
 #[allow(unused_imports)]
 use std::net::UdpSocket;
 
-mod configs;
+mod dns;
 
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.

@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub struct DnsHeader {
-    pub packet_identifier: u16,
+    packet_identifier: u16,
     pub flags: u16,
     pub question_count: u16,
     pub answer_record_count: u16,
@@ -8,19 +8,17 @@ pub struct DnsHeader {
     pub additional_record_count: u16,
 }
 
-impl DnsHeader {
+impl From<&[u8]> for DnsHeader {
     fn from(bytes: &[u8]) -> Self {
         if bytes.len() != 12 {
-            panic!("only slices of length 12 can be converted into a DNS header");
+            panic!("only slices of length 12 can be converted into a DnsHeader");
         }
-
         let packet_identifier = u16::from_be_bytes(bytes[0..=1].try_into().unwrap());
         let flags = u16::from_be_bytes(bytes[2..=3].try_into().unwrap());
         let question_count = u16::from_be_bytes(bytes[4..=5].try_into().unwrap());
         let answer_record_count = u16::from_be_bytes(bytes[6..=7].try_into().unwrap());
         let authority_record_count = u16::from_be_bytes(bytes[8..=9].try_into().unwrap());
         let additional_record_count = u16::from_be_bytes(bytes[10..=11].try_into().unwrap());
-
         DnsHeader {
             packet_identifier,
             flags,
@@ -46,13 +44,24 @@ impl Into<[u8; 12]> for DnsHeader {
     }
 }
 
+pub enum DnsHeaderFlag {
+    Qr(QueryResponseIndicator),
+    OpCode(OperationCode),
+    Aa(bool),
+    Tc(bool),
+    Rd(bool),
+    Ra(bool),
+    Z(Reserved),
+    RCode(ResponseCode),
+}
+
 pub enum QueryResponseIndicator {
     Query(),
     Response(),
 }
 
 impl QueryResponseIndicator {
-    fn value(&self) -> u16 {
+    pub fn value(&self) -> u16 {
         match *self {
             QueryResponseIndicator::Query() => 0b0000_0000_0000_0000,
             QueryResponseIndicator::Response() => 0b1000_0000_0000_0000,
@@ -112,74 +121,4 @@ pub enum ResponseCode {
     BADTRUNC = 22,    // Bad Truncation [RFC8945]
     BADCOOKIE = 23,   // Bad/missing Server Cookie [RFC7873]
     Reserved = 65535, // Reserved, can be allocated by Standards Action
-}
-
-pub struct BytePacketBuffer {
-    pub buf: [u8; 512],
-    pub position: u8,
-}
-
-impl BytePacketBuffer {
-    pub fn new() -> Self {
-        Self {
-            buf: [0; 512],
-            position: 0,
-        }
-    }
-}
-
-pub enum DnsHeaderFlag {
-    Qr(QueryResponseIndicator),
-    OpCode(OperationCode),
-    Aa(bool),
-    Tc(bool),
-    Rd(bool),
-    Ra(bool),
-    Z(Reserved),
-    RCode(ResponseCode),
-}
-
-pub struct DnsMessage {
-    pub header: DnsHeader,
-    pub questions: Vec<u8>,
-    pub answer: Vec<u8>,
-    pub authority: Vec<u8>,
-    pub extra: Vec<u8>,
-}
-
-impl From<&[u8; 512]> for DnsMessage {
-    fn from(message: &[u8; 512]) -> Self {
-        let header = DnsHeader::from(&message[..=11]);
-        DnsMessage {
-            header,
-            questions: Vec::with_capacity(500),
-            answer: Vec::with_capacity(500),
-            authority: Vec::with_capacity(512),
-            extra: Vec::with_capacity(512),
-        }
-    }
-}
-
-impl DnsMessage {
-    pub fn set_header_flag(&mut self, flag: DnsHeaderFlag) {
-        match flag {
-            DnsHeaderFlag::Qr(qri) => match qri {
-                // Ensures flag is set to '0' regardless of whether current value is 1 or 0
-                QueryResponseIndicator::Query() => self.header.flags &= qri.value(),
-
-                // Ensures flag is set to '1' regardless of whether current value is 1 or 0
-                QueryResponseIndicator::Response() => self.header.flags |= qri.value(),
-            },
-            _ => panic!("not implemented"),
-        }
-    }
-
-    pub fn serialize_as_be(self) -> [u8; 512] {
-        let mut bytes: [u8; 512] = [0; 512];
-
-        let header_bytes: [u8; 12] = self.header.into();
-        bytes[0..=11].copy_from_slice(&header_bytes);
-
-        bytes
-    }
 }
