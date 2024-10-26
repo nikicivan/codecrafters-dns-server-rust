@@ -1,26 +1,44 @@
 use crate::dns::dns_header::{DnsHeader, DnsHeaderFlag, QueryResponseIndicator};
 use crate::dns::dns_question::Question;
 
+use super::dns_question::{DomainName, ResourceClass, ResourceType};
+
 pub struct DnsMessage {
     pub header: DnsHeader,
     pub questions: Vec<Question>,
-    pub answer: Vec<u8>,
+    pub answers: Vec<Answer>,
     pub authority: Vec<u8>,
     pub extra: Vec<u8>,
 }
 
 impl From<&[u8; 512]> for DnsMessage {
     fn from(message: &[u8; 512]) -> Self {
-        let header = DnsHeader::from(&message[..=11]);
+        let mut header = DnsHeader::from(&message[..=11]);
         let question_count = header.question_count;
 
         let (questions, section_len) =
             DnsMessage::parse_question_section(&message[12..], question_count).unwrap();
 
+        let mut answers = Vec::<Answer>::new();
+
+        for q in questions.iter() {
+            let answer = Answer {
+                name: q.name.clone(),
+                resource_type: q.resource_type.clone(),
+                resource_class: q.resource_class.clone(),
+                ttl: 60,
+                length: 4,
+                data: 8888,
+            };
+
+            answers.push(answer);
+            header.answer_record_count += 1;
+        }
+
         DnsMessage {
             header,
             questions,
-            answer: Vec::with_capacity(500),
+            answers,
             authority: Vec::with_capacity(512),
             extra: Vec::with_capacity(512),
         }
@@ -86,13 +104,57 @@ impl DnsMessage {
         let mut end = 0;
 
         for q in self.questions {
-            let q_bytes: Vec<u8> = q.into();
+            let q_bytes: Vec<u8> = q.clone().into();
 
             end = start + q_bytes.len();
             bytes[start..end].copy_from_slice(&q_bytes);
             start = end;
         }
 
+        for a in self.answers {
+            let a_bytes: Vec<u8> = a.into();
+            dbg!(String::from_utf8_lossy(&a_bytes));
+            end = start + a_bytes.len();
+            bytes[start..end].copy_from_slice(&a_bytes);
+            start = end;
+        }
+
         bytes
+    }
+}
+
+pub struct Answer {
+    name: DomainName,
+    resource_type: ResourceType,
+    resource_class: ResourceClass,
+    ttl: u32,
+    length: u16,
+    data: u32,
+}
+impl Answer {
+    pub fn new() -> Self {
+        Answer {
+            name: DomainName { content: vec![] },
+            resource_type: ResourceType::A,
+            resource_class: ResourceClass::IN,
+            ttl: 60,
+            length: 0,
+            data: 0,
+        }
+    }
+}
+impl Into<Vec<u8>> for Answer {
+    fn into(self) -> Vec<u8> {
+        let mut output = Vec::<u8>::new();
+        let name_bytes: Vec<u8> = self.name.into();
+        output.extend_from_slice(&name_bytes.as_slice());
+        //self.resource_type.value()
+        // self.resource_class.value()
+        output.extend_from_slice(&u16::to_be_bytes(1));
+        output.extend_from_slice(&u16::to_be_bytes(1));
+        output.extend_from_slice(&u32::to_be_bytes(self.ttl));
+        output.extend_from_slice(&u16::to_be_bytes(self.length));
+        output.extend_from_slice(&u32::to_be_bytes(self.data));
+        output
     }
 }

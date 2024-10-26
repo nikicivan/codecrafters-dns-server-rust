@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DomainName {
     pub content: Vec<String>,
 }
@@ -63,6 +63,7 @@ impl Into<Vec<u8>> for DomainName {
 /////////////////////////////////////////////////////
 // RESOURCE TYPE
 /////////////////////////////////////////////////////
+#[derive(Clone)]
 pub enum ResourceType {
     A,
     NS,
@@ -134,6 +135,7 @@ impl ResourceType {
 /////////////////////////////////////////////////////
 // RESOURCE CLASS
 /////////////////////////////////////////////////////
+#[derive(Clone)]
 pub enum ResourceClass {
     IN,
     CS,
@@ -170,6 +172,7 @@ impl ResourceClass {
 /////////////////////////////////////////////////////
 // QUESTION
 /////////////////////////////////////////////////////
+#[derive(Clone)]
 pub struct Question {
     pub name: DomainName,
     pub resource_type: ResourceType,
