@@ -57,24 +57,25 @@ impl DnsMessage {
             return Ok((questions, 0));
         }
 
-        let end_points: Vec<usize> = input
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &b)| if b == 0 { Some(i) } else { None })
-            .collect();
+        // let end_points: Vec<usize> = input
+        //     .iter()
+        //     .enumerate()
+        //     .filter_map(|(i, &b)| if b == 0 { Some(i) } else { None })
+        //     .collect();
 
-        if end_points.len() < count_size {
-            panic!("There are less endpoints then questions");
-        }
+        // if end_points.len() < count_size {
+        //     panic!("There are less endpoints then questions");
+        // }
 
         let mut offset = 0;
         for i in 0..(count_size) {
             // One byte for the '0' terminator, two bytes for the type, two bytes for the class
-            let end = end_points[i] + 5;
+            // let end = end_points[i] + 5;
 
-            let q = Question::from(&input[offset..end]);
+            // let q = Question::from(&input[offset..end]);
+            let (q, q_end_index) = Question::deserialize(&input, offset);
             questions.push(q);
-            offset = end + 1;
+            offset = q_end_index + 1;
         }
 
         Ok((questions, offset))
