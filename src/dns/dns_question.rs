@@ -24,7 +24,7 @@ impl DomainName {
             // loop starts on the byte signifying the content length, or a pointer
             let content_length = name_slice[i] as usize;
             let is_pointer = (name_slice[i] & 0b11000000) == 0b11000000;
-            if (!is_pointer && break_on_not_pointer) {
+            if !is_pointer && break_on_not_pointer {
                 // Pointers are not terminated with a null byte (0), which means the current byte
                 // is actually the start of the resource type and the index needs to be set back one.
                 ending_index = i - 1;
@@ -237,7 +237,7 @@ impl ResourceClass {
 /////////////////////////////////////////////////////
 // QUESTION
 /////////////////////////////////////////////////////
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Question {
     pub name: DomainName,
     pub resource_type: ResourceType,

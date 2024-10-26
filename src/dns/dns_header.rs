@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DnsHeader {
     packet_identifier: u16,
     pub flags: u16,
@@ -68,6 +68,7 @@ impl DnsHeader {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum DnsHeaderFlag {
     Qr(QueryResponseIndicator),
     OpCode(OperationCode),
@@ -79,6 +80,7 @@ pub enum DnsHeaderFlag {
     RCode(ResponseCode),
 }
 
+#[derive(Debug, Clone)]
 pub enum QueryResponseIndicator {
     Query(),
     Response(),
@@ -93,6 +95,7 @@ impl QueryResponseIndicator {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum OperationCode {
     Query(),
     IQuery(),
@@ -104,17 +107,17 @@ pub enum OperationCode {
 }
 
 impl OperationCode {
-    fn value(&self) -> u8 {
-        match *self {
-            OperationCode::Query() => 0,
-            OperationCode::IQuery() => 1,
-            OperationCode::Unassigned() => 2,
-            OperationCode::Status() => 3,
-            OperationCode::Notify() => 4,
-            OperationCode::Update() => 5,
-            OperationCode::DnsStatefulOperations() => 6,
-        }
-    }
+    // fn value(&self) -> u8 {
+    //     match *self {
+    //         OperationCode::Query() => 0,
+    //         OperationCode::IQuery() => 1,
+    //         OperationCode::Unassigned() => 2,
+    //         OperationCode::Status() => 3,
+    //         OperationCode::Notify() => 4,
+    //         OperationCode::Update() => 5,
+    //         OperationCode::DnsStatefulOperations() => 6,
+    //     }
+    // }
 }
 
 impl TryFrom<u8> for OperationCode {
@@ -133,11 +136,12 @@ impl TryFrom<u8> for OperationCode {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Reserved {
     Unassigned(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ResponseCode {
     NoError = 0,      // No Error [RFC1035]
     FormErr = 1,      // Format Error [RFC1035]
